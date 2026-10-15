@@ -1,70 +1,67 @@
-"""A tiny Fortnite adventure starring Peely."""
+"""A Fortnite adventure starring Peely."""
 
 rooms = {
-    "camp": {"exits": ["forest", "tower"], "items": []},
-    "forest": {"exits": ["camp", "bunker"], "items": ["battery", "fuel"]},
-    "tower": {"exits": ["camp"], "items": ["lens"]},
-    "bunker": {"exits": ["forest", "rocket"], "items": ["keycard"]},
-    "rocket": {"exits": ["bunker"], "items": []},
+    "camp": ["forest", "tower"],
+    "forest": ["camp", "bunker"],
+    "tower": ["camp"],
+    "bunker": ["forest", "rocket"],
+    "rocket": ["bunker"],
 }
+items = {"forest": ["battery", "fuel"], "tower": ["lens"], "bunker": ["keycard"]}
 room, bag = "camp", []
-powered = unlocked = fueled = done = False
+powered = hatch_open = controls_ready = fueled = done = False
 tries = 0
 
-
-def look():
-    print(f"\nPeely is at the {room}. Exits: {', '.join(rooms[room]['exits'])}")
-    print("Items:", ", ".join(rooms[room]["items"]) or "none")
-
-
-def command(text):
-    global room, powered, unlocked, fueled, done, tries
-    words = text.lower().split()
+print("PEELY'S FORTNITE ESCAPE: outrun the storm!")
+while not done:
+    print(f"\nAt {room}. Exits: {', '.join(rooms[room]) or 'none'}")
+    print("Items:", ", ".join(items.get(room, [])) or "none")
+    words = input("> ").lower().split()
     if not words:
-        return
-    verb, item = words[0], " ".join(words[1:])
-    if verb in ("help",):
-        print("Commands: look, go <place>, take <item>, use <item>, inv, answer <number>, quit")
-    elif verb == "look":
-        look()
+        continue
+    verb, target = words[0], " ".join(words[1:])
+
+    if verb == "help":
+        print("Commands: go <place>, take <item>, use <item>, inv, answer <number>, quit")
     elif verb == "inv":
         print("Inventory:", ", ".join(bag) or "empty")
-    elif verb == "go" and item in rooms[room]["exits"]:
-        if item == "rocket" and not unlocked:
+    elif verb == "go":
+        if target == "rocket" and not hatch_open:
             print("The bunker hatch is locked.")
+        elif target in rooms[room]:
+            room = target
         else:
-            room = item
-            look()
-    elif verb == "take" and item in rooms[room]["items"]:
-        rooms[room]["items"].remove(item)
-        bag.append(item)
-        print("Taken:", item)
-    elif verb == "use" and item in bag:
-        if item == "lens":
+            print("You can't go there.")
+    elif verb == "take" and target in items.get(room, []):
+        items[room].remove(target)
+        bag.append(target)
+        print("Taken:", target)
+    elif verb == "use" and target in bag:
+        if target == "lens":
             print("Clue: 11 + 17 + 21")
-        elif room == "bunker" and item == "keycard":
-            unlocked = True
-            print("The hatch unlocks.")
-        elif room == "rocket" and item == "battery":
+        elif room == "bunker" and target == "keycard":
+            hatch_open = True
+            print("The bunker hatch unlocks.")
+        elif room == "rocket" and target == "battery":
             powered = True
             print("Rocket powered.")
-        elif room == "rocket" and item == "keycard" and powered:
-            unlocked = True
+        elif room == "rocket" and target == "keycard" and powered:
+            controls_ready = True
             print("Launch controls unlocked.")
-        elif room == "rocket" and item == "fuel" and powered and unlocked:
+        elif room == "rocket" and target == "fuel" and powered and controls_ready:
             fueled = True
             print("Rocket fueled. Enter the clue's total!")
         else:
             print("That won't help here.")
     elif verb == "answer":
-        if room != "rocket" or not (powered and unlocked and fueled):
+        if room != "rocket" or not (powered and controls_ready and fueled):
             print("Get the rocket ready first.")
         elif len(words) < 2 or not words[1].isdigit():
             print("Enter a number.")
         else:
             tries += 1
             if int(words[1]) == 49:
-                print("Peely blasts away from the storm. You win!")
+                print("Peely escapes the storm. You win!")
                 done = True
             elif tries == 3:
                 print("The storm catches Peely. Game over.")
@@ -76,15 +73,3 @@ def command(text):
         done = True
     else:
         print("Try 'help' or check the room.")
-
-
-def main():
-    global done
-    print("PEELY'S FORTNITE ESCAPE: outrun the storm!")
-    look()
-    while not done:
-        command(input("> "))
-
-
-if __name__ == "__main__":
-    main()
